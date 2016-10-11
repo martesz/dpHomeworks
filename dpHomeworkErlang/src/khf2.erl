@@ -1,27 +1,14 @@
-%% @author martin
-%% @doc @todo Add description to khf2.
-
-
 -module(khf2).
-
-%% ====================================================================
-%% API functions
-%% ====================================================================
--export([]).
+-author('kovacsmartin24@gmail.com').
+-vsn('2016-10-11').
+-export([ertekek/2]).
 -compile(export_all).
 
-
-
-
-%% ====================================================================
-%% Internal functions
-%% ====================================================================
-
-% Sorok listÃ¡jakÃ©nt tÃ¡rolt mÃ¡trix i. sorÃ¡nak elÅallÃ­tÃ¡sa.
+% Sorok listÃÂ¡jakÃÂ©nt tÃÂ¡rolt mÃÂ¡trix i. sorÃÂ¡nak elÃÂallÃÂ­tÃÂ¡sa.
 matrixSoraSL(M, I) ->
         nth(I, M).
 
-% Sorok listÃ¡jakÃ©nt tÃ¡rolt mÃ¡trix j. oszlopÃ¡nak elÅÃ¡llÃ­tÃ¡sa.        
+% Sorok listÃÂ¡jakÃÂ©nt tÃÂ¡rolt mÃÂ¡trix j. oszlopÃÂ¡nak elÃÂÃÂ¡llÃÂ­tÃÂ¡sa.        
 matrixOszlopaSL(M, J) ->
         [nth(J, X) || X <- M].
 
@@ -33,7 +20,7 @@ nth(N, [_|T]) -> nth(N-1, T).
 szelet(L, I, J) ->
     szelet(L, I, J, 1).
     
-% Lista szeletÃ©nek (i. Ã©s j. sorszÃ¡mÃº elemek kÃ¶zÃ¶tti rÃ©szÃ©nek) elÅÃ¡llÃ­tÃ¡sa. 
+% Lista szeletÃÂ©nek (i. ÃÂ©s j. sorszÃÂ¡mÃÂº elemek kÃÂ¶zÃÂ¶tti rÃÂ©szÃÂ©nek) elÃÂÃÂ¡llÃÂ­tÃÂ¡sa. 
 szelet([Fej|Farok], I, J, Index) ->
     case Index of
         X when X < I -> szelet(Farok, I, J, Index + 1);
@@ -49,18 +36,18 @@ isMember(X, [Head | Tail]) ->
 	X =:= Head orelse isMember(X, Tail).
 
 % @spec newMember(X::any(), Xs::set()) -> Xs2::set().
-% Xs2 halmaz az Xs halmaz és az [X] halmaz uniója.
+% Xs2 halmaz az Xs halmaz Ã©s az [X] halmaz uniÃ³ja.
 newMember(X, Set) ->
 	case isMember(X, Set) of
 		true -> Set;
 		false -> [X | Set]
 	end.
 
-% @spec union(Xs::set(), Ys::set()) -> Zs::set(). % Zs az Xs és Ys halmazok uniója. 
+% @spec union(Xs::set(), Ys::set()) -> Zs::set(). % Zs az Xs Ã©s Ys halmazok uniÃ³ja. 
 union2(Xs, Ys) ->
 	lists:foldr(fun newMember/2, Ys, Xs).
 
-% sorok listÃ¡jakÃ©nt tÃ¡rolt mÃ¡trix sorfolytonos vÃ¡ltozata
+% sorok listÃÂ¡jakÃÂ©nt tÃÂ¡rolt mÃÂ¡trix sorfolytonos vÃÂ¡ltozata
 listaToSF([H | []]) -> H;
 listaToSF([H | T]) -> 
     lists:append(H, listaToSF(T)).
@@ -71,7 +58,7 @@ listaToSF([H | T]) ->
 %% @type subRows() = integer().
 %% @type subCols() = integer().
 %% @spec khf1:feldarabolasa(Mx::matrix(), P::parameter()) -> LL::[[any()]].
-%%   Az LL lista az Mx mÃ¡trix P paramÃ©terÅ± feldarabolÃ¡sa.
+%%   Az LL lista az Mx mÃÂ¡trix P paramÃÂ©terÃÂ± feldarabolÃÂ¡sa.
 feldarabolasa(M, RC) ->
     {R, C} = RC,
     W = length(nth(1, M)),
@@ -80,7 +67,7 @@ feldarabolasa(M, RC) ->
 
 feldarabolasa(M, R, C, ActColumn, ActLine, Width, Height) -> 
     case ActColumn of
-        Col when Col > Width -> []; % vÃ©gÃ©re Ã©rtÃ¼nk, nincs tÃ¶bb oszlop
+        Col when Col > Width -> []; % vÃÂ©gÃÂ©re ÃÂ©rtÃÂ¼nk, nincs tÃÂ¶bb oszlop
         _ ->
             case ActLine of
                 Line when Line > Height -> feldarabolasa(M, R, C, ActColumn + C, 1, Width, Height);
@@ -90,9 +77,9 @@ feldarabolasa(M, R, C, ActColumn, ActLine, Width, Height) ->
             end
     end.    
      
-% M mÃ¡trixbÃ³l kivÃ¡g egy szeletet, RAct a kezdÅsor, egy sorban
-% az I-J-ig vÃ¡g, R db sorbÃ³l
-% az eredmÃ©ny egy R X (I-J) mÃ¡trix    
+% M mÃÂ¡trixbÃÂ³l kivÃÂ¡g egy szeletet, RAct a kezdÃÂsor, egy sorban
+% az I-J-ig vÃÂ¡g, R db sorbÃÂ³l
+% az eredmÃÂ©ny egy R X (I-J) mÃÂ¡trix    
 getSubMatrix(M, R, I, J, RIndex, RAct) ->
     Line = nth(RAct, M),
     case Line of
@@ -104,8 +91,8 @@ getSubMatrix(M, R, I, J, RIndex, RAct) ->
             end
     end.
 
-% Egy sorok listájaként tárolt mátrix adott mezőjét befoglaló
-% k-méretű cella elemeit tartalmazó lista előállítása. 
+%Egy sorok listájaként tárolt mátrix adott mezőjét befoglaló
+% k-méretű cella elemeit tartalmazó lista előállítása.
 getCellAccordingToIndex(Matrix, CellSize, FieldR, FieldC) ->
 	CellI = ((FieldC - 1) div CellSize) * CellSize + 1,
 	CellJ = ((FieldR - 1) div CellSize) * CellSize + 1,
@@ -120,12 +107,17 @@ getCellAccordingToIndex(Matrix, CellSize, FieldR, FieldC) ->
 %%   Vals az SSpec specifikációval megadott Sudoku-feladvány R_C
 %%   koordinátájú mezőjében megengedett értékek listája.
 ertekek({CellSize, Matrix}, {FieldR, FieldC}) ->
-	Row = matrixSoraSL(Matrix, FieldR),
-	Column = matrixOszlopaSL(Matrix, FieldC),
-	Cell = getCellAccordingToIndex(Matrix, CellSize, FieldR, FieldC),
+	FieldInfos = getField(Matrix, FieldR, FieldC),
+	TempRow = matrixSoraSL(Matrix, FieldR),
+	Row = lists:delete(FieldInfos, TempRow), % A kérdéses mezőt nem akarjuk beletenni
+	TempColumn = matrixOszlopaSL(Matrix, FieldC),
+	Column = lists:delete(FieldInfos, TempColumn),
+	TempCell = getCellAccordingToIndex(Matrix, CellSize, FieldR, FieldC),
+	Cell = lists:delete(FieldInfos, TempCell),
 	UsedValues = getUsedValues(Row, Column, Cell),
 	PossibleValues = lists:seq(1, CellSize * CellSize),
-	Field = getField(Matrix, FieldR, FieldC)
+	FilteredValues = filterValues(PossibleValues, FieldInfos),
+	FilteredValues -- UsedValues.
 	
 getUsedValues(Row, Column, Cell) ->
 	Temp = union2(Row, Column),
@@ -144,3 +136,15 @@ getField(Matrix, FieldR, FieldC) ->
 	Row = nth(FieldR, Matrix),
 	nth(FieldC, Row).
 
+filterByInfo([], _Value) ->
+	true;
+filterByInfo([H | T], Value) ->
+	if 
+		H == e -> (Value rem 2 =:= 0) andalso filterByInfo(T, Value);
+		H == o -> (Value rem 2 =/= 0) andalso filterByInfo(T, Value);
+		erlang:is_integer(H) -> H =:= Value andalso filterByInfo(T, Value);
+		true -> true andalso filterByInfo(T, Value)
+	end.
+
+filterValues(Values, Infos) ->
+	[X || X <- Values, filterByInfo(Infos, X)].
