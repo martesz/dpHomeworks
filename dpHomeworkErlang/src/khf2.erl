@@ -8,6 +8,8 @@
 %% API functions
 %% ====================================================================
 -export([]).
+-compile(export_all).
+
 
 
 
@@ -31,6 +33,20 @@ szelet([Fej|Farok], I, J, Index) ->
         _ -> []
     end;
 szelet([], _I, _J, _Index) -> [].
+
+% isMember(X, Ys) igaz, ha az X elem benne van az Ys halmazban.
+isMember(_, []) ->
+	false;
+isMember(X, [Head | Tail]) ->
+	X =:= Head orelse isMember(X, Tail).
+
+% @spec newMember(X::any(), Xs::set()) -> Xs2::set().
+% Xs2 halmaz az Xs halmaz �s az [X] halmaz uni�ja.
+newMember(X, Set) ->
+	case isMember(X, Set) of
+		true -> Set;
+		false -> [X | Set]
+	end.
 
 % sorok listájaként tárolt mátrix sorfolytonos változata
 listaToSF([H | []]) -> H;
