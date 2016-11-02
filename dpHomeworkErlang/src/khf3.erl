@@ -1,11 +1,9 @@
 -module(khf3).
 -author('kovacsmartin24@gmail.com').
 -vsn('2016-10-11').
--compile(export_all).
+%-compile(export_all).
+-export([megoldase/2]).
 
-% Sorok listÃÂ¡jakÃÂ©nt tÃÂ¡rolt mÃÂ¡trix i. sorÃÂ¡nak elÃÂallÃÂ­tÃÂ¡sa.
-matrixSoraSL(M, I) ->
-        nth(I, M).
 
 % Sorok listÃÂ¡jakÃÂ©nt tÃÂ¡rolt mÃÂ¡trix j. oszlopÃÂ¡nak elÃÂÃÂ¡llÃÂ­tÃÂ¡sa.        
 matrixOszlopaSL(M, J) ->
@@ -28,53 +26,10 @@ szelet([Fej|Farok], I, J, Index) ->
     end;
 szelet([], _I, _J, _Index) -> [].
 
-% isMember(X, Ys) igaz, ha az X elem benne van az Ys halmazban.
-isMember(_, []) ->
-	false;
-isMember(X, [Head | Tail]) ->
-	X =:= Head orelse isMember(X, Tail).
-
-% @spec newMember(X::any(), Xs::set()) -> Xs2::set().
-% Xs2 halmaz az Xs halmaz Ã©s az [X] halmaz uniÃ³ja.
-newMember(X, Set) ->
-	case isMember(X, Set) of
-		true -> Set;
-		false -> [X | Set]
-	end.
-
-% @spec union(Xs::set(), Ys::set()) -> Zs::set(). % Zs az Xs Ã©s Ys halmazok uniÃ³ja. 
-union2(Xs, Ys) ->
-	lists:foldr(fun newMember/2, Ys, Xs).
-
 % sorok listÃÂ¡jakÃÂ©nt tÃÂ¡rolt mÃÂ¡trix sorfolytonos vÃÂ¡ltozata
 listaToSF([H | []]) -> H;
 listaToSF([H | T]) -> 
-    lists:append(H, listaToSF(T)).
-
-%% @type matrix() = [row()].
-%% @type row() = [any()].
-%% @type parameter() = {subRows(), subCols()}.
-%% @type subRows() = integer().
-%% @type subCols() = integer().
-%% @spec khf1:feldarabolasa(Mx::matrix(), P::parameter()) -> LL::[[any()]].
-%%   Az LL lista az Mx mÃÂ¡trix P paramÃÂ©terÃÂ± feldarabolÃÂ¡sa.
-feldarabolasa(M, RC) ->
-    {R, C} = RC,
-    W = length(nth(1, M)),
-    H = length(M),
-    feldarabolasa(M, R, C, 1, 1, W, H).
-
-feldarabolasa(M, R, C, ActColumn, ActLine, Width, Height) -> 
-    case ActColumn of
-        Col when Col > Width -> []; % vÃÂ©gÃÂ©re ÃÂ©rtÃÂ¼nk, nincs tÃÂ¶bb oszlop
-        _ ->
-            case ActLine of
-                Line when Line > Height -> feldarabolasa(M, R, C, ActColumn + C, 1, Width, Height);
-                Line when Line =< Height -> 
-                    SubMatrix = listaToSF(getSubMatrix(M, R, ActColumn, ActColumn + (C - 1), 1, ActLine)),
-                    [SubMatrix | feldarabolasa(M, R, C, ActColumn, ActLine + R, Width, Height)]
-            end
-    end.    
+    lists:append(H, listaToSF(T)).  
      
 % M mÃÂ¡trixbÃÂ³l kivÃÂ¡g egy szeletet, RAct a kezdÃÂsor, egy sorban
 % az I-J-ig vÃÂ¡g, R db sorbÃÂ³l
@@ -90,63 +45,10 @@ getSubMatrix(M, R, I, J, RIndex, RAct) ->
             end
     end.
 
-%Egy sorok listájaként tárolt mátrix adott mezőjét befoglaló
-% k-méretű cella elemeit tartalmazó lista előállítása.
-getCellAccordingToIndex(Matrix, CellSize, FieldR, FieldC) ->
-	CellI = ((FieldC - 1) div CellSize) * CellSize + 1,
-	CellJ = ((FieldR - 1) div CellSize) * CellSize + 1,
-	listaToSF(getSubMatrix(Matrix, CellSize, CellI, CellI + CellSize - 1, 1, CellJ)).	
-
-%% @type col() = integer().
-%% @type row() = integer().
-%% @type coords() = {row(),col()}.
-%% @spec khf2:ertekek(SSpec::sspec(), R_C::coords()) -> Vals::[integer()]
-%%   Egy érték pontosan akkor szerepel a Vals listában, ha teljesíti a
-%%   fenti Prolog specifikációban felsorolt (a), (b) és (c) feltételeket, ahol
-%%   Vals az SSpec specifikációval megadott Sudoku-feladvány R_C
-%%   koordinátájú mezőjében megengedett értékek listája.
-ertekek({CellSize, Matrix}, {FieldR, FieldC}) ->
-	FieldInfos = getField(Matrix, FieldR, FieldC),
-	TempRow = matrixSoraSL(Matrix, FieldR),
-	Row = lists:delete(FieldInfos, TempRow), % A kérdéses mezőt nem akarjuk beletenni
-	TempColumn = matrixOszlopaSL(Matrix, FieldC),
-	Column = lists:delete(FieldInfos, TempColumn),
-	TempCell = getCellAccordingToIndex(Matrix, CellSize, FieldR, FieldC),
-	Cell = lists:delete(FieldInfos, TempCell),
-	UsedValues = getUsedValues(Row, Column, Cell),
-	PossibleValues = lists:seq(1, CellSize * CellSize),
-	FilteredValues = filterValues(PossibleValues, FieldInfos),
-	FilteredValues -- UsedValues.
-	
-getUsedValues(Row, Column, Cell) ->
-	Temp = union2(Row, Column),
-	Values = union2(Temp, Cell),
-	lists:map(fun getIntegerFromField/1, Values).
-	
-getIntegerFromField([]) ->
-	[];
-getIntegerFromField([Head | Tail]) ->
-	if
-		erlang:is_integer(Head) -> Head;
-		true -> getIntegerFromField(Tail)
-	end.
-
+% Mátrix adott mezője
 getField(Matrix, FieldR, FieldC) ->
 	Row = nth(FieldR, Matrix),
 	nth(FieldC, Row).
-
-filterByInfo([], _Value) ->
-	true;
-filterByInfo([H | T], Value) ->
-	if 
-		H == e -> (Value rem 2 =:= 0) andalso filterByInfo(T, Value);
-		H == o -> (Value rem 2 =/= 0) andalso filterByInfo(T, Value);
-		erlang:is_integer(H) -> H =:= Value andalso filterByInfo(T, Value);
-		true -> true andalso filterByInfo(T, Value)
-	end.
-
-filterValues(Values, Infos) ->
-	[X || X <- Values, filterByInfo(Infos, X)].
 
 % Igaz, ha a lista összes eleme különböző
 allUnique(List) ->
@@ -167,12 +69,6 @@ allOk([H|T], Pred) ->
 	Pred(H) andalso allOk(T, Pred);
 allOk([], _) ->
 	true.
-
-% Igaz, ha a lista legalább egy elemére igaz a predikátum
-atLeastOneOk([H|T], Pred) ->
-	Pred(H) orelse atLeastOneOk(T, Pred);
-atLeastOneOk([], _) ->
-	false.
 
 filterField(Matrix, Solution, R, C) ->
 	Infos = getField(Matrix, R, C),
@@ -195,9 +91,9 @@ filterByInfo([H | T], R, C, Solution, Value) ->
 		true -> true andalso filterByInfo(T, R, C, Solution, Value)
 	end.
 
+% Mátrix oszlopainak listája
 getColumns(Matrix, ColumnCount) ->
 	getColumns(Matrix, ColumnCount, 1).
-
 getColumns(Matrix, ColumnCount, Iterator) ->
 	if 
 		Iterator =< ColumnCount ->
@@ -206,9 +102,9 @@ getColumns(Matrix, ColumnCount, Iterator) ->
 		true -> []
 	end.
 
+% Sudoku mátrix összes cellája
 getCells(Matrix, CellSize) ->
 	getCells(Matrix, CellSize, 1, CellSize, 1).
-
 getCells(Matrix, CellSize, I, J, RowNum) ->
 	if
 		RowNum > (CellSize * CellSize) ->
@@ -219,10 +115,14 @@ getCells(Matrix, CellSize, I, J, RowNum) ->
 			[listaToSF(getSubMatrix(Matrix, CellSize, I, J, 1, RowNum)) | getCells(Matrix, CellSize, I + CellSize, J + CellSize, RowNum)]
 	end.
 
+%% @spec khf3:megoldase(SSpec::sspec(), SSol::ssol()) -> B::bool().
+%% B igaz, ha SSol megoldása az SSpec feladványnak.
 megoldase({CellSize, Matrix}, Solution) ->
 	checkSolutionUnique(Solution, CellSize) andalso
 		checkAllFields(Matrix, Solution, CellSize).
 
+% A megoldásban ellenőriz minden sort, oszlopot és cellát,
+% hogy nincs-e bennük ismétlődő érték
 checkSolutionUnique(Solution, CellSize) ->
 	Rows = Solution,
 	Columns = getColumns(Solution, CellSize * CellSize),
@@ -231,6 +131,8 @@ checkSolutionUnique(Solution, CellSize) ->
 		allOk(Columns, fun allUnique/1) andalso
 		allOk(Cells, fun allUnique/1).
 
+% A megoldás minden mezőjét ellenőrzi, hogy megfelelnek-e
+% a feladványban megadott mező információknak
 checkAllFields(Matrix, Solution, CellSize) ->
 	checkAllFields(Matrix, Solution, CellSize, 1, 1).
 checkAllFields(Matrix, Solution, CellSize, R, C) ->
@@ -242,4 +144,8 @@ checkAllFields(Matrix, Solution, CellSize, R, C) ->
 			filterField(Matrix, Solution, R, C) andalso
 				checkAllFields(Matrix, Solution, CellSize, R, C + 1)
 	end.
+
+
+
+getAllPossibleValues(Matrix, CellSize) -> true.
 			
