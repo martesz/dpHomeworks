@@ -595,7 +595,7 @@ filterRows([H|T]) ->
     {Return + Return1, [FilteredRow | FilteredRows], NotBound + NotBound1}.
 
 filterRow(Row) ->
-    {Return, FilteredRow, _BoundValues, NotBound} = filterRowHelper(Row, []),    
+    {Return, FilteredRow, _BoundValues, NotBound, _} = filterRowHelper(Row, []),    
     {Return, FilteredRow, NotBound}.            
             
 % Kiszűrjük a sorból a kötött elemeket, ha újabb kötött elemek jelennek meg,
@@ -603,35 +603,57 @@ filterRow(Row) ->
 % Bemenet: Sor, kezdeti kötött értékek listája
 % Kimenet: 4-es {Int(történt-e a változás, >0 történt, <0 nincs megoldás, =:=0 nem történt változás)
 % List(a szűrt sor), List(kötött értékek), Int( nem lekötött mezők száma)}
-filterRowHelper([], InitBound) -> {0, [], InitBound, 0};
+filterRowHelper([], InitBound) -> {0, [], InitBound, 0, []};
 filterRowHelper([H|T], InitBound) ->
-    {Return1, FilteredTail, BoundValues1, NotBound1} = filterRowHelper(T, InitBound),
+    {Return1, FilteredTail, BoundValues1, NotBound1, PrevElements1} = filterRowHelper(T, InitBound),
     {IsChanged, IsBound, FilteredField} = filterValuesFromList(H, BoundValues1),
+	PrevElements = ordsets:union(PrevElements1, FilteredField),
     if 
         IsBound =:= bound ->
-            {Return, FilteredTail1, _BoundValues, NotBound2} = filterRowHelper(FilteredTail, FilteredField),
-            if
-                Return < 0 ->
-                    {Return, [], [], 0};
-                true ->
-                    BoundValues = ordsets:union(FilteredField, BoundValues1),
-                    if
-                        IsChanged =:= changed ->
-                            {Return1 + Return + 1, [FilteredField | FilteredTail1], BoundValues, NotBound2};
-                        IsChanged =:= failed ->
-                            {-9999, [], [], 0};
-                        true ->
-                            {Return1 + Return, [FilteredField | FilteredTail1], BoundValues, NotBound2}
-                    end
-            end;
+		[Elem] = FilteredField,
+		Contains = lists:member(Elem, PrevElements1),
+			if
+				Contains =:= true -> % ha lett új lekötött érték, és ez az érték előfordult, az eddig bejárt részben újra szűrünk
+            	{Return, FilteredTail1, _BoundValues, NotBound2, PrevElements2} = filterRowHelper(FilteredTail, FilteredField),
+            	if
+                	Return < 0 ->
+                    	{Return, [], [], 0, []};
+               	 	true ->
+						PrevElements3 = ordsets:union(PrevElements2, FilteredField),
+                    	BoundValues = ordsets:union(FilteredField, BoundValues1),
+                    	if
+                        	IsChanged =:= changed ->
+                            	{Return1 + Return + 1, [FilteredField | FilteredTail1], BoundValues, NotBound2, PrevElements3};
+                        	IsChanged =:= failed ->
+                            	{-9999, [], [], 0, []};
+                        	true ->
+                            	{Return1 + Return, [FilteredField | FilteredTail1], BoundValues, NotBound2, PrevElements3}
+                    	end
+            	end;
+				true ->
+					if
+                		Return1 < 0 ->
+                    		{Return1, [], [], 0, []};
+                		true ->
+                    		BoundValues = ordsets:union(FilteredField, BoundValues1),
+                    	if
+                        	IsChanged =:= changed ->
+                            	{Return1 + 1, [FilteredField | FilteredTail], BoundValues, NotBound1, PrevElements};
+                        	IsChanged =:= failed ->
+                            	{-9999, [], [], 0, []};
+                        	true ->
+                            	{Return1, [FilteredField | FilteredTail], BoundValues, NotBound1, PrevElements}
+                    	end
+            	end
+			end;
         true ->
            if
                 IsChanged =:= changed ->
-                    {Return1 + 1, [FilteredField | FilteredTail], BoundValues1, NotBound1 + 1};
+                    {Return1 + 1, [FilteredField | FilteredTail], BoundValues1, NotBound1 + 1, PrevElements};
                 IsChanged =:= failed ->
-                    {-9999, [], [], 0};
+                    {-9999, [], [], 0, []};
                 true ->
-                    {Return1, [FilteredField | FilteredTail], BoundValues1, NotBound1 + 1}
+                    {Return1, [FilteredField | FilteredTail], BoundValues1, NotBound1 + 1, PrevElements}
             end
     end.
 
@@ -641,42 +663,42 @@ filterMatrix(Matrix, InfoMatrix, CellSize) ->
 	{WFiltered, ReturnW} = filterWAllRows(Matrix, InfoMatrix),
    
 	if
-		 ReturnW < 0  ->
+		ReturnW < 0  ->
 			 {[], ReturnW, 0};
 		true ->
 			 {Return, FilteredRows, _NotBound} = filterRows(WFiltered),
-    	if 
-        % Ha bármelyik szűrés elhasal, visszatérünk, nincs megoldás
-        Return < 0 ->
-            {[], Return, 0};
-        true ->
-            %oszlopok szűrése
-            Columns = listaToOF(FilteredRows),
-			InfoColumns = listaToOF(InfoMatrix),
-			{FilteredColumns, ReturnS} = filterSAllColumns(Columns, InfoColumns),
-			if
-				ReturnS < 0 ->
-					{[], ReturnS, 0};
-				true ->
-            {Return1, FilteredRows1, _NotBound1} = filterRows(FilteredColumns),
-            if
-                Return1 < 0 ->
-                    {[], Return1, 0};
-                true ->
-                    % cellák szűrése
-                    Rows = listaToOF(FilteredRows1),
-                    Cells = getCells(Rows, CellSize),
-                    {Return2, FilteredRows2, NotBound2} = filterRows(Cells),
-                    if 
-                        Return2 < 0 ->
-                          {[], Return2, 0};
-                        true ->
-                            Result = cellsToRowConsecutive(FilteredRows2, CellSize),
-                            {Result, Return2, NotBound2}
-                    end
-            end
-			end
-    	end
+    		if 
+        		% Ha bármelyik szűrés elhasal, visszatérünk, nincs megoldás
+        		Return < 0 ->
+            		{[], Return, 0};
+        		true ->
+            		%oszlopok szűrése
+            		Columns = listaToOF(FilteredRows),
+					InfoColumns = listaToOF(InfoMatrix),
+					{FilteredColumns, ReturnS} = filterSAllColumns(Columns, InfoColumns),
+					if
+						ReturnS < 0 ->
+							{[], ReturnS, 0};
+						true ->
+            				{Return1, FilteredRows1, _NotBound1} = filterRows(FilteredColumns),
+            				if
+               					Return1 < 0 ->
+                    				{[], Return1, 0};
+                				true ->
+                   					% cellák szűrése
+                    				Rows = listaToOF(FilteredRows1),
+                    				Cells = getCells(Rows, CellSize),
+                    				{Return2, FilteredRows2, NotBound2} = filterRows(Cells),
+                    				if 
+                        				Return2 < 0 ->
+                          					{[], Return2, 0};
+                        				true ->
+                           					Result = cellsToRowConsecutive(FilteredRows2, CellSize),
+                            				{Result, Return2, NotBound2}
+                    				end
+            				end
+					end
+    		end
 	end.
 
 % Addig szűrjük a mátrixot, amíg változik
